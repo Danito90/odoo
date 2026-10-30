@@ -53,8 +53,7 @@ psql -U postgres -c "CREATE ROLE odoo_user WITH LOGIN CREATEDB PASSWORD 'claveXX
 
 ```powershell
 cd F:\Proyectos\Odoo\odoo
-py -3.12 -m venv venv
-.\venv\Scripts\Activate.ps1
+py -3.12 -m venv .venv .\venv\Scripts\Activate.ps1
 ```
 
 Si PowerShell bloquea la activación por la política de ejecución, correr una sola vez:
@@ -63,8 +62,18 @@ Si PowerShell bloquea la activación por la política de ejecución, correr una 
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ```
 
-Con el entorno activo el prompt muestra `(venv)`. **Hay que activarlo cada vez que se
+- O crearlo con 
+```
+python -m venv .venv 
+```
+
+Con el entorno activo el prompt muestra `(.venv)`. **Hay que activarlo cada vez que se
 abre una terminal nueva** antes de correr Odoo.
+
+```
+.venv\scripts\activate
+```
+
 
 ## 4. Instalar dependencias
 
@@ -89,6 +98,26 @@ python odoo-bin -r odoo_user -w claveXXX --addons-path=addons,..\custom_addons -
 
 Abrir **http://localhost:8069** e ingresar con `admin` / `admin` (cambiar la clave
 después del primer ingreso).
+
+### Usuario administrador
+
+No hace falta crearlo a mano: al inicializar una base nueva, Odoo instala el módulo
+`base`, y este crea automáticamente el usuario administrador con login `admin` y
+contraseña `admin` (definido en `odoo/addons/base/data/res_users_data.xml`).
+
+- Si la base **ya existía vacía** (por ejemplo, creada a mano con `createdb`), Odoo no
+  la inicializa solo y no habrá usuario `admin`. En ese caso, inicializarla con
+  `-i base`:
+
+  ```powershell
+  python odoo-bin -r odoo_user -w claveXXX --addons-path=addons,..\custom_addons -d odoo_DB -i base
+  ```
+
+- Alternativa: crear la base desde el navegador en
+  **http://localhost:8069/web/database/manager** (sin pasar `-d`). Ahí se eligen el
+  email/login y la contraseña del administrador.
+- Para cambiar la clave: *Ajustes → Usuarios y compañías → Usuarios → Administrator*,
+  o desde el menú del usuario (arriba a la derecha) *Mi perfil → Seguridad*.
 
 Para detener el servidor: `Ctrl + C` en la terminal.
 
