@@ -810,8 +810,13 @@ class DiscussChannel(models.Model):
         """
         LastInterestUpdate = self.env["discuss.channel.last.interest.update"]
         cron = self.env.ref("mail.ir_cron_discuss_channel_sync_last_interest_dt")
-        with tools.mute_logger('odoo.models.unlink'):
-            self.env["ir.cron.trigger"].search([("cron_id", "=", cron.id)]).unlink()
+        # SKIP LOCKED: the cron runner's own cursor already holds (and deletes) the due triggers;
+        # waiting on them from the job cursor would self-deadlock until limit_time_real.
+        self.env.cr.execute(SQL(
+            """DELETE FROM ir_cron_trigger WHERE id IN (
+                   SELECT id FROM ir_cron_trigger WHERE cron_id = %s FOR UPDATE SKIP LOCKED)""",
+            cron.id,
+        ))
         channel_ids = LastInterestUpdate.search_fetch([], limit=batch_size).channel_id.ids
         if not channel_ids:
             return
